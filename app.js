@@ -1,7 +1,8 @@
+import cookieParser from "cookie-parser";
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-// import { startDB } from "./src/config/database.js";
+import { startDB } from "./src/config/database.js";
 
 const app = express();
 const PORT = process.env.PORT || 3003;
