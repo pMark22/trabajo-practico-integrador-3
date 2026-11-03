@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import {
   createCategory,
   getAllCategories,
@@ -7,19 +8,47 @@ import {
   deleteCategory,
 } from "../controllers/category.controller.js";
 
+import {
+  createCategoryValidation,
+  updateCategoryValidation,
+  categoryIdValidation,
+} from "../middlewares/category.validation.js";
+
+import { validateRequest } from "../middlewares/validate.middleware.js";
+
 export const categoryRouter = Router();
 
-// Ruta para crear una categoría
-categoryRouter.post("/categories", createCategory);
+// Crear una categoria
+categoryRouter.post(
+  "/categories",
+  createCategoryValidation,
+  validateRequest,
+  createCategory,
+);
 
-// Ruta para traer todas las categorías
+// Obtener todas las categorias
 categoryRouter.get("/categories", getAllCategories);
 
-// Ruta para traer una categoría por id
-categoryRouter.get("/categories/:id", getCategoryById);
+// Obtener una categoria por ID
+categoryRouter.get(
+  "/categories/:id",
+  categoryIdValidation,
+  validateRequest,
+  getCategoryById,
+);
 
-// Ruta para actualizar una categoría
-categoryRouter.put("/categories/:id", updateCategory);
+// Actualizar una categoria
+categoryRouter.put(
+  "/categories/:id",
+  updateCategoryValidation,
+  validateRequest,
+  updateCategory,
+);
 
-// Ruta para eliminar una categoría
-categoryRouter.delete("/categories/:id", deleteCategory);
+// Eliminar una categoria
+categoryRouter.delete(
+  "/categories/:id",
+  categoryIdValidation,
+  validateRequest,
+  deleteCategory,
+);
