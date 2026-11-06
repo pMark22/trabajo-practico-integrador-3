@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import {
   createEvent,
   getAllEvents,
@@ -7,19 +8,55 @@ import {
   deleteEvent,
 } from "../controllers/event.controller.js";
 
+import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { ownerOrAdminMiddleware } from "../middlewares/owner-or-admin.middleware.js";
+
+import {
+  createEventValidation,
+  updateEventValidation,
+  eventIdValidation,
+} from "../middlewares/validations/event.validation.js";
+
+import { validateRequest } from "../middlewares/validate.middleware.js";
+
 export const eventRouter = Router();
 
-// Ruta para crear un evento
-eventRouter.post("/events", createEvent);
+// Crear un evento (requiere autenticación).
+eventRouter.post(
+  "/events",
+  authMiddleware,
+  createEventValidation,
+  validateRequest,
+  createEvent,
+);
 
-// Ruta para traer todos los eventos
+// Consultar todos los eventos (público).
 eventRouter.get("/events", getAllEvents);
 
-// Ruta para traer un evento por id
-eventRouter.get("/events/:id", getEventById);
+// Consultar un evento por ID (público).
+eventRouter.get(
+  "/events/:id",
+  eventIdValidation,
+  validateRequest,
+  getEventById,
+);
 
-// Ruta para actualizar un evento
-eventRouter.put("/events/:id", updateEvent);
+// Modificar un evento (organizador o administrador).
+eventRouter.put(
+  "/events/:id",
+  authMiddleware,
+  updateEventValidation,
+  validateRequest,
+  ownerOrAdminMiddleware,
+  updateEvent,
+);
 
-// Ruta para eliminar un evento
-eventRouter.delete("/events/:id", deleteEvent);
+// Eliminar un evento (organizador o administrador).
+eventRouter.delete(
+  "/events/:id",
+  authMiddleware,
+  eventIdValidation,
+  validateRequest,
+  ownerOrAdminMiddleware,
+  deleteEvent,
+);
