@@ -11,6 +11,7 @@ import {
 import {
   registerValidation,
   loginValidation,
+  updateProfileValidation,
 } from "../middlewares/validations/auth.validation.js";
 
 import { validateRequest } from "../middlewares/validate.middleware.js";
@@ -32,8 +33,14 @@ authRouter.post("/auth/login", loginValidation, validateRequest, loginUser);
 // OBTENER PERFIL (requiere autenticación)
 authRouter.get("/auth/profile", authMiddleware, getProfile);
 
-// ACTUALIZAR PERFIL (requiere autenticación)
-authRouter.put("/auth/profile", authMiddleware, updateProfile);
+// ACTUALIZAR PERFIL
+authRouter.put(
+  "/auth/profile",
+  authMiddleware,
+  updateProfileValidation,
+  validateRequest,
+  updateProfile,
+);
 
 // CERRAR SESIÓN (requiere autenticación)
 authRouter.post("/auth/logout", authMiddleware, logoutUser);
