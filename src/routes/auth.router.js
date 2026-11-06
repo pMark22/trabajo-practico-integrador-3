@@ -1,6 +1,12 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/auth.controller.js";
+import { registerUser, loginUser } from "../controllers/auth.controller.js";
+
+import { validateRequest } from "../middlewares/validate.middleware.js";
 
 export const authRouter = Router();
 
-authRouter.post("/auth/register", registerUser);
+// Ruta para registrar un usuario.
+authRouter.post("/auth/register", validateRequest, registerUser);
+
+// Ruta para iniciar sesión.
+authRouter.post("/auth/login", validateRequest, loginUser);
