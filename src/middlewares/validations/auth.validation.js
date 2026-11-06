@@ -1,6 +1,6 @@
 import { body } from "express-validator";
 
-// Validaciones para registrar un usuario.
+// VALIDACIONES PARA REGISTRAR UN USUARIO
 export const registerValidation = [
   body("username")
     .trim()
@@ -40,7 +40,7 @@ export const registerValidation = [
     .isLength({ min: 2, max: 50 }),
 ];
 
-// Validaciones para iniciar sesión.
+// VALIDACIONES PARA INICIAR SESIÓN
 export const loginValidation = [
   body("email")
     .trim()
@@ -51,4 +51,31 @@ export const loginValidation = [
     .normalizeEmail(),
 
   body("password").notEmpty().withMessage("La contraseña es obligatoria"),
+];
+
+// VALIDACIONES PARA ACTUALIZAR EL PERFIL
+export const updateProfileValidation = [
+  body("firstName")
+    .trim()
+    .notEmpty()
+    .withMessage("El nombre es obligatorio")
+    .isLength({ min: 2, max: 50 })
+    .withMessage("El nombre debe tener entre 2 y 50 caracteres"),
+
+  body("lastName")
+    .trim()
+    .notEmpty()
+    .withMessage("El apellido es obligatorio")
+    .isLength({ min: 2, max: 50 })
+    .withMessage("El apellido debe tener entre 2 y 50 caracteres"),
+
+  body("birthDate")
+    .optional({ values: "null" })
+    .isISO8601()
+    .withMessage("La fecha de nacimiento no es válida"),
+
+  body("phone")
+    .optional({ values: "null" })
+    .matches(/^[0-9]{8,15}$/)
+    .withMessage("El teléfono debe tener entre 8 y 15 números"),
 ];
