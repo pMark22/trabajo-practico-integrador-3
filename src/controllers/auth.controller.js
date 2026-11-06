@@ -5,14 +5,12 @@ import { generateToken } from "../helpers/jwt.helper.js";
 // REGISTRO DE USUARIOS
 export const registerUser = async (req, res) => {
   try {
-    // Obtenemos los datos enviados desde el cliente.
     const { username, email, password, profile } = req.body;
 
     // Hasheamos la contraseña antes de guardarla.
     const hashedPassword = await hashPassword(password);
 
-    // Creamos el usuario en MongoDB.
-    // El rol se asigna automáticamente como "user" desde el modelo.
+    // Creamos el usuario con el rol predeterminado del modelo.
     const newUser = await UserModel.create({
       username,
       email,
@@ -20,7 +18,7 @@ export const registerUser = async (req, res) => {
       profile,
     });
 
-    // Convertimos el documento para quitar la contraseña de la respuesta.
+    // Evitamos enviar la contraseña en la respuesta.
     const userResponse = newUser.toObject();
     delete userResponse.password;
 
@@ -31,14 +29,12 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     console.log(error);
 
-    // Error cuando el usuario o correo ya existen.
     if (error.code === 11000) {
       return res.status(409).json({
         msg: "El usuario o correo ya existe",
       });
     }
 
-    // Error cuando los datos no cumplen el modelo.
     if (error.name === "ValidationError") {
       return res.status(400).json({
         msg: "Los datos del usuario no son válidos",
@@ -55,39 +51,35 @@ export const registerUser = async (req, res) => {
 // INICIO DE SESIÓN
 export const loginUser = async (req, res) => {
   try {
-    // Obtenemos el correo y la contraseña enviados.
     const { email, password } = req.body;
 
-    // Buscamos al usuario y solicitamos explícitamente su contraseña.
-    // Esto es necesario porque password tiene select: false en el modelo.
+    // Buscamos al usuario incluyendo su contraseña hasheada.
     const user = await UserModel.findOne({
       email,
       deletedAt: null,
     }).select("+password");
 
-    // Si el usuario no existe, rechazamos el inicio de sesión.
     if (!user) {
       return res.status(401).json({
         msg: "Correo o contraseña incorrectos",
       });
     }
 
-    // Comparamos la contraseña ingresada con el hash almacenado.
+    // Comparamos la contraseña ingresada con el hash.
     const passwordIsValid = await comparePassword(password, user.password);
 
-    // Si la contraseña no coincide, rechazamos el acceso.
     if (!passwordIsValid) {
       return res.status(401).json({
         msg: "Correo o contraseña incorrectos",
       });
     }
 
-    // Generamos un token con el ID del usuario.
+    // Generamos un JWT con el ID del usuario.
     const token = generateToken({
       id: user._id.toString(),
     });
 
-    // Guardamos el token en una cookie.
+    // Guardamos el token en una cookie segura.
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -95,7 +87,6 @@ export const loginUser = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    // Quitamos la contraseña antes de devolver los datos.
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -108,6 +99,98 @@ export const loginUser = async (req, res) => {
 
     return res.status(500).json({
       msg: "Error interno del servidor",
+    });
+  }
+};
+
+// OBTENER PERFIL DEL USUARIO AUTENTICADO
+export const getProfile = async (req, res) => {
+  try {
+    // El middleware de autenticación proporciona el usuario.
+    const user = req.user;
+
+    return res.status(200).json({
+      msg: "Perfil obtenido correctamente",
+      data: user,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      msg: "Error al obtener el perfil",
+    });
+  }
+};
+
+// ACTUALIZAR PERFIL DEL USUARIO AUTENTICADO
+export const updateProfile = async (req, res) => {
+  try {
+    // Solo permitimos modificar los datos del perfil.
+    const { firstName, lastName, birthDate, phone } = req.body;
+
+    const user = await UserModel.findOneAndUpdate(
+      {
+        _id: req.user._id,
+        deletedAt: null,
+      },
+      {
+        $set: {
+          "profile.firstName": firstName,
+          "profile.lastName": lastName,
+          "profile.birthDate": birthDate,
+          "profile.phone": phone,
+        },
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        msg: "Usuario no encontrado",
+      });
+    }
+
+    return res.status(200).json({
+      msg: "Perfil actualizado correctamente",
+      data: user,
+    });
+  } catch (error) {
+    console.log(error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        msg: "Los datos del perfil no son válidos",
+        errors: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      msg: "Error al actualizar el perfil",
+    });
+  }
+};
+
+// CERRAR SESIÓN
+export const logoutUser = (req, res) => {
+  try {
+    // Eliminamos la cookie que contiene el token.
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({
+      msg: "Sesión cerrada correctamente",
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      msg: "Error al cerrar sesión",
     });
   }
 };
